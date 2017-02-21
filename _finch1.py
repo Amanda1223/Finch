@@ -154,10 +154,6 @@ class myFinch:
             return
 
         return
-    # def obstacle (self):
-    #     left_obst, right_obst = self.tweety.obstacle()
-    #     if left_obst == True:
-
 
     def setWheels ( self, left, right ):
         self.left_wheel = left
