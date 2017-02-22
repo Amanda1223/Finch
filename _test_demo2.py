@@ -30,11 +30,11 @@ class lighting:
         self.avg_left = 0
         self.avg_right = 0
         self.diff_left = 0
-        self.curr_left = 0
-        self.curr_right = 0
+        self.right_comp = 0
+        self.left_comp = 0
 
-    def getCurrentLights (self):
-        return self.curr_left, self.curr_right
+    def getComparison (self):
+        return self.left_comp, self.right_comp
 
     def readValues(self):
         with open("calib.txt", "r") as calibFile:
@@ -62,18 +62,23 @@ class lighting:
     # Return values (integer) :: 1 == light / brighter, -1 == dark, 0 == no change
     def lightStatus(self):
         current_left, current_right = self.tweety.light()
-        self.curr_right = current_right
-        self.curr_left = current_left
+
         left_status, right_status = 0, 0
         if current_left < (self.min_left - self.max_deviation):
             left_status = -1
+            self.left_comp = self.min_left - current_left
+
         elif current_left > (self.max_left + self.max_deviation):
             left_status = 1
+            self.left_comp = current_left - self.max_left;
 
         if current_right < (self.min_right - self.max_deviation):
             right_status = -1
+            self.right_comp = self.min_right - current_right
+
         elif current_right > (self.max_right + self.max_deviation):
             right_status = 1
+            self.right_comp = current_right - self.max_right;
 
         return left_status, right_status
 
@@ -155,20 +160,53 @@ class myFinch:
         return True
 
     def scurryTowardsLights ( self ):
+        onCurve = 0
         while (True):
+
+            # Check lights, then obstacles
             left_light, right_light = self.myLights.lightStatus()
             if left_light == 0 and right_light == 0:
                 # just keep swimming
+                print("just keep swimming")
+                sleep(.25)
+                onCurve = onCurve + 1
+                if onCurve == 5:
+                    self.tweety.setWheels(0.0, 0.0)
+                    self.tweety.setWheels(0.1, 0.5)
+                    sleep(0.5)
+                    self.tweety.setWheels(0.25, 0.5)
+
             elif left_light > 0 or right_light > 0:
+                onCurve = 0
                 # stop ... move towards the light
-                if left_light > 0:
-
+                self.tweety.setWheels(0.0, 0.0)
+                leftval, rightval = self.myLights.getComparison
+                if leftval > rightval:
+                    # turn towards our left
+                    print("going left")
                 else:
-
+                    # turn towards our right
+                    print("going right")
 
             elif right_light < 0 or right_light < 0:
+                onCurve = 0
+                print("got darker")
 
+    def turnRight(self):
+        self.setWheels(.5, .25)
 
+    def turnLeft(self):
+        self.setWheels(0.25, .5)
+
+    def straight(self):
+        self.setWheels(0.4, 0.4)
+
+    def charging(self):
+        self.tweety.led("#00FF00")
+        self.tweety.buzzer(1.0, 800)
+
+    def discharging(self):
+        self.tweety.led("#FF0000")
 ##########################################################
 #                   main program                         #
 # Entry point of the program.
@@ -210,4 +248,30 @@ def calibrateLights(tweety, filename):
     return
 
 tweet = myFinch()
-calibrateLights(tweet, "calib.txt")
+print("1 - Calibration")
+print("2 - Cockroach")
+print("3 - Two Lights in a Box")
+print("4 - Kennel in a Box")
+print("5 - Low Obstacle")
+mode = int(input("Enter option : "))
+
+
+
+if mode == 1:
+    print (" Calibrating ...")
+    calibrateLights(tweet, "calib.txt")
+elif mode == 2:
+    print("Starting Cockroack implementation...")
+
+elif mode == 3:
+    print("Starting Two Lights in a Box implementation...")
+
+elif mode == 4:
+    print("Starting Kennel in a Box implementation...")
+
+elif mode == 5:
+    print("Starting Low Obstacle implementation...")
+
+else:
+
+    os._exit(0)
