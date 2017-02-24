@@ -13,7 +13,7 @@ import time
 import os
 
 # Exporting data to an excel file
-import xlsxwriter
+#import xlsxwriter
 
 ##########################################################
 #                   light class : lighting               #
@@ -268,11 +268,14 @@ class myFinch:
         self.tweety.led("#FF0000")
 
     def delay (self, time):
+        print("howdy")
         #while loop with time and check for obstacles
 ##########################################################
 #                   main program                         #
 # Entry point of the program.
 ##########################################################
+print("main start")
+
 def calibrateLights(tweety, filename):
     tweety.setWheels(0.5, 0.65)
     left_sensor = []
@@ -309,6 +312,8 @@ def calibrateLights(tweety, filename):
     target.close()
     return
 
+
+print("finch init")
 tweet = myFinch()
 print("1 - Calibration")
 print("2 - Cockroach")
@@ -317,14 +322,14 @@ print("4 - Kennel in a Box")
 print("5 - Low Obstacle")
 mode = int(input("Enter option : "))
 
-
+print("stuff")
 
 if mode == 1:
     print (" Calibrating ...")
     calibrateLights(tweet, "calib.txt")
 elif mode == 2:
     print("Starting Cockroack implementation...")
-
+    tweet.scurryTowardsLights()
 
 elif mode == 3:
     print("Starting Two Lights in a Box implementation...")
