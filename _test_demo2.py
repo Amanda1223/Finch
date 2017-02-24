@@ -80,6 +80,7 @@ class lighting:
             self.left_comp = self.min_left - current_left
 
         elif current_left > (self.max_left + self.max_deviation):
+            print(current_left, " LEFT maximum ", (self.max_left+self.max_deviation))
             left_status = 1
             if current_left > self.left_bright:
                 self.left_bright = current_left
@@ -90,6 +91,7 @@ class lighting:
             self.right_comp = self.min_right - current_right
 
         elif current_right > (self.max_right + self.max_deviation):
+            print(current_right, " RIGHT maximum ", (self.max_right+self.max_deviation))
             right_status = 1
             if current_right > self.right_bright:
                 self.right_bright = current_right
@@ -117,6 +119,7 @@ class myFinch:
 
         # Setting initial lighting
         self.myLights = lighting(self.tweety)
+        self.myLights.readValues()
 
         # Setting initial acceleration settings
         self.x, self.y, self.z, self.tap, self.shake = self.tweety.acceleration()
@@ -167,16 +170,18 @@ class myFinch:
 
     def isLight( self ):
         current_left, current_right = self.tweety.light()
-        print ("Left reading :   ",current_left)
-        print ("Right reading :  ", current_right)
-        sleep(1)
         return current_left, current_right
-        return False
-        return True
 
     def scurryTowardsLights ( self ):
         onCurve = 0
         onMax = 0
+        maxleft, maxright = self.myLights.getMax()
+        tmpmaxleft = maxleft + .25
+        tmpmaxright = maxright + .25
+        if (tmpmaxleft) > .75:
+            tmpmaxleft = .75
+        if (tmpmaxright) > .75:
+            tmpmaxright = .75
         while (True):
 
             # Check lights, then obstacles
@@ -184,22 +189,24 @@ class myFinch:
             self.left_obst, self.right_obst = self.tweety.obstacle()
             self.checkForObstacle()
             if left_light == 0 and right_light == 0:
-                self.setWheels(0.25, 0.5)
+                self.setWheels(0.30, 0.5)
                 # Just keep swimming
                 print("Just keep swimming")
                 sleep(.25)
-                onCurve = onCurve + 1
+                onCurve += 1
                 if onCurve == 5:
+                    print("Small curve")
                     self.setWheels(0.0, 0.0)
                     self.setWheels(0.1, 0.5)
-                    sleep(0.5)
-                    self.setWheels(0.25, 0.5) # Natural curve speed (testing)
+                    sleep(3.0)
+                    self.setWheels(0.30, 0.5) # Natural curve speed (testing)
+                    onCurve = 0
 
             elif left_light > 0 or right_light > 0:
                 onCurve = 0
                 # Find "brightest"
                 # stop ... move towards the light
-                maxleft, maxright = self.myLights.getMax()
+
                 self.setWheels(0.0, 0.0)
                 leftval, rightval = self.myLights.getComparison()
                 if leftval > rightval:
@@ -210,14 +217,27 @@ class myFinch:
                     print("Going right")
                     # Turn towards our right
                     self.turnRight()
-                tmpmaxleft = maxleft + .25
-                tmpmaxright = maxright + .25
-                if (tmpmaxleft) > .75:
-                    tmpmaxleft = .75
-                if (tmpmaxright) > .75:
-                    tmpmaxright = .75
+
                 if ((leftval + maxleft) > (tmpmaxleft)) and ((rightval + maxright) > tmpmaxright):
                     print("Under bright area!")
+                    while( True ):
+                        self.setWheels(0.0, 0.0)
+                        self.setWheels(0.5, 0.5)
+                        sleep(0.25)
+                        self.setWheels(0.0, 0.0)
+                        left, right = self.isLight()
+                        print(left, " ", right)
+                        print(tmpmaxleft, " ", tmpmaxright)
+                        if (left > tmpmaxleft) or (right > tmpmaxright):
+                            tmpmaxleft = left
+                            tmpmaxright = right
+                            sleep(0.5)
+                        else:
+                            self.setWheels(-0.5, - 0.5)
+                            sleep(0.30)
+                            self.setWheels(0.0, 0.0)
+                            break
+                    os._exit(0)
 
             elif right_light < 0 or right_light < 0:
                 onCurve = 0
