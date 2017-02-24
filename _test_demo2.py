@@ -184,23 +184,23 @@ class myFinch:
             self.left_obst, self.right_obst = self.tweety.obstacle()
             self.checkForObstacle()
             if left_light == 0 and right_light == 0:
-                self.tweety.setWheels(0.25, 0.5)
+                self.setWheels(0.25, 0.5)
                 # Just keep swimming
                 print("Just keep swimming")
                 sleep(.25)
                 onCurve = onCurve + 1
                 if onCurve == 5:
-                    self.tweety.setWheels(0.0, 0.0)
-                    self.tweety.setWheels(0.1, 0.5)
+                    self.setWheels(0.0, 0.0)
+                    self.setWheels(0.1, 0.5)
                     sleep(0.5)
-                    self.tweety.setWheels(0.25, 0.5) # Natural curve speed (testing)
+                    self.setWheels(0.25, 0.5) # Natural curve speed (testing)
 
             elif left_light > 0 or right_light > 0:
                 onCurve = 0
                 # Find "brightest"
                 # stop ... move towards the light
                 maxleft, maxright = self.myLights.getMax()
-                self.tweety.setWheels(0.0, 0.0)
+                self.setWheels(0.0, 0.0)
                 leftval, rightval = self.myLights.getComparison()
                 if leftval > rightval:
                     # Turn towards our left
