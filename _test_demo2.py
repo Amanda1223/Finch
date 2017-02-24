@@ -20,8 +20,15 @@ import xlsxwriter
 ##########################################################
 class lighting:
     def __init__ (self, tweety):
+
+    ## Brightest values
+        self.left_bright = 0.0
+        self.right_bright = 0.0
+
+    ## Tweety
         self.tweety = tweety
         self.max_deviation = 0.009
+
     ## Read data from the file : calib.txt ##
         self.max_left = 0
         self.max_right = 0
@@ -30,11 +37,15 @@ class lighting:
         self.avg_left = 0
         self.avg_right = 0
         self.diff_left = 0
+
+    ## Comparisons for the left and right values
         self.right_comp = 0
         self.left_comp = 0
 
     def getComparison (self):
         return self.left_comp, self.right_comp
+    def getMax(self):
+        return self.max_left, self.max_right
 
     def readValues(self):
         with open("calib.txt", "r") as calibFile:
@@ -70,6 +81,8 @@ class lighting:
 
         elif current_left > (self.max_left + self.max_deviation):
             left_status = 1
+            if current_left > self.left_bright:
+                self.left_bright = current_left
             self.left_comp = current_left - self.max_left;
 
         if current_right < (self.min_right - self.max_deviation):
@@ -78,6 +91,8 @@ class lighting:
 
         elif current_right > (self.max_right + self.max_deviation):
             right_status = 1
+            if current_right > self.right_bright:
+                self.right_bright = current_right
             self.right_comp = current_right - self.max_right;
 
         return left_status, right_status
@@ -161,36 +176,80 @@ class myFinch:
 
     def scurryTowardsLights ( self ):
         onCurve = 0
+        onMax = 0
         while (True):
 
             # Check lights, then obstacles
             left_light, right_light = self.myLights.lightStatus()
+            self.left_obst, self.right_obst = self.tweety.obstacle()
+            self.checkForObstacle()
             if left_light == 0 and right_light == 0:
-                # just keep swimming
-                print("just keep swimming")
+                self.tweety.setWheels(0.25, 0.5)
+                # Just keep swimming
+                print("Just keep swimming")
                 sleep(.25)
                 onCurve = onCurve + 1
                 if onCurve == 5:
                     self.tweety.setWheels(0.0, 0.0)
                     self.tweety.setWheels(0.1, 0.5)
                     sleep(0.5)
-                    self.tweety.setWheels(0.25, 0.5)
+                    self.tweety.setWheels(0.25, 0.5) # Natural curve speed (testing)
 
             elif left_light > 0 or right_light > 0:
                 onCurve = 0
+                # Find "brightest"
                 # stop ... move towards the light
+                maxleft, maxright = self.myLights.getMax()
                 self.tweety.setWheels(0.0, 0.0)
-                leftval, rightval = self.myLights.getComparison
+                leftval, rightval = self.myLights.getComparison()
                 if leftval > rightval:
-                    # turn towards our left
-                    print("going left")
+                    # Turn towards our left
+                    print("Going left")
+                    self.turnLeft()
                 else:
-                    # turn towards our right
-                    print("going right")
+                    print("Going right")
+                    # Turn towards our right
+                    self.turnRight()
+                tmpmaxleft = maxleft + .25
+                tmpmaxright = maxright + .25
+                if (tmpmaxleft) > .75:
+                    tmpmaxleft = .75
+                if (tmpmaxright) > .75:
+                    tmpmaxright = .75
+                if ((leftval + maxleft) > (tmpmaxleft)) and ((rightval + maxright) > tmpmaxright):
+                    print("Under bright area!")
 
             elif right_light < 0 or right_light < 0:
                 onCurve = 0
                 print("got darker")
+
+    def checkForObstacle(self):
+        if self.left_obst == True and self.right_obst == True:
+            print ("Obstacle straight ahead")
+            self.setWheels( -(self.left_wheel), -(self.right_wheel))
+            sleep(0.5)
+            self.setWheels( 0.0, 0.0 )
+            sleep(0.1)
+            self.setWheels( 0.0, 0.5)
+            sleep(0.5)
+        elif self.right_obst == True:
+            print ("Obstacle on right")
+            self.setWheels( -(self.left_wheel), -(self.right_wheel))
+            sleep(0.5)
+            self.setWheels( 0.0, 0.0 )
+            sleep(0.1)
+            self.setWheels( 0.5, 0.0 )
+            sleep(0.5)
+        elif self.left_obst == True:
+            print("Obstacle on left")
+            self.setWheels( -(self.left_wheel), -(self.right_wheel))
+            sleep(0.5)
+            self.setWheels( 0.0, 0.0 )
+            sleep(0.1)
+            self.setWheels( 0.5, 0.0 )
+            sleep(0.5)
+        else:
+            print("No obstacle")
 
     def turnRight(self):
         self.setWheels(.5, .25)
@@ -207,6 +266,9 @@ class myFinch:
 
     def discharging(self):
         self.tweety.led("#FF0000")
+
+    def delay (self, time):
+        #while loop with time and check for obstacles
 ##########################################################
 #                   main program                         #
 # Entry point of the program.
@@ -262,6 +324,7 @@ if mode == 1:
     calibrateLights(tweet, "calib.txt")
 elif mode == 2:
     print("Starting Cockroack implementation...")
+
 
 elif mode == 3:
     print("Starting Two Lights in a Box implementation...")
