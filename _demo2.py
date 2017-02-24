@@ -101,6 +101,9 @@ class myFinch:
         self.right_wheel = 0.0
         self.tweety.wheels(self.left_wheel, self.right_wheel)
 
+    def __del__(self):
+        self.tweety.close()
+
 
     # [FUNCTION]Name - setWheels ( left, right )
     # Synopsis -
