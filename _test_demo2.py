@@ -128,6 +128,8 @@ class myFinch:
         self.left_wheel = 0.0
         self.right_wheel = 0.0
         self.tweety.wheels(self.left_wheel, self.right_wheel)
+
+
     # [FUNCTION]Name - setWheels ( left, right )
     # Synopsis -
     #       def setWheels ( left, right ) :
@@ -175,6 +177,8 @@ class myFinch:
     def scurryTowardsLights ( self ):
         onCurve = 0
         onMax = 0
+        lspeed, rspeed = 0.3, 0.5
+        clspeed, crspeed = 0.1, 0.5
         maxleft, maxright = self.myLights.getMax()
         tmpmaxleft = maxleft + .25
         tmpmaxright = maxright + .25
@@ -183,23 +187,26 @@ class myFinch:
         if (tmpmaxright) > .75:
             tmpmaxright = .75
         while (True):
-
             # Check lights, then obstacles
             left_light, right_light = self.myLights.lightStatus()
             self.left_obst, self.right_obst = self.tweety.obstacle()
-            self.checkForObstacle()
+            if ( self.checkForObstacle()):
+
+                #switch the speeds
+                lspeed, rspeed = rspeed, lspeed
+                clspeed, crspeed = crspeed, clspeed
+
             if left_light == 0 and right_light == 0:
-                self.setWheels(0.30, 0.5)
+
                 # Just keep swimming
                 print("Just keep swimming")
-                sleep(.25)
+                self.delay(0.3, lspeed, rspeed)
                 onCurve += 1
-                if onCurve == 5:
+                if onCurve == 10:
                     print("Small curve")
                     self.setWheels(0.0, 0.0)
-                    self.setWheels(0.1, 0.5)
-                    sleep(3.0)
-                    self.setWheels(0.30, 0.5) # Natural curve speed (testing)
+                    self.delay(3.0, clspeed, crspeed)
+                    self.setWheels(lspeed, rspeed) # Natural curve speed (testing)
                     onCurve = 0
 
             elif left_light > 0 or right_light > 0:
@@ -222,8 +229,7 @@ class myFinch:
                     print("Under bright area!")
                     while( True ):
                         self.setWheels(0.0, 0.0)
-                        self.setWheels(0.5, 0.5)
-                        sleep(0.25)
+                        self.delay(0.3, 0.5, 0.5)
                         self.setWheels(0.0, 0.0)
                         left, right = self.isLight()
                         print(left, " ", right)
@@ -233,8 +239,7 @@ class myFinch:
                             tmpmaxright = right
                             sleep(0.5)
                         else:
-                            self.setWheels(-0.5, - 0.5)
-                            sleep(0.30)
+                            self.delay(0.3, -0.5, -0.5)
                             self.setWheels(0.0, 0.0)
                             break
                     os._exit(0)
@@ -252,6 +257,7 @@ class myFinch:
             sleep(0.1)
             self.setWheels( 0.0, 0.5)
             sleep(0.5)
+            return True
         elif self.right_obst == True:
             print ("Obstacle on right")
             self.setWheels( -(self.left_wheel), -(self.right_wheel))
@@ -260,6 +266,7 @@ class myFinch:
             sleep(0.1)
             self.setWheels( 0.5, 0.0 )
             sleep(0.5)
+            return True
         elif self.left_obst == True:
             print("Obstacle on left")
             self.setWheels( -(self.left_wheel), -(self.right_wheel))
@@ -268,8 +275,11 @@ class myFinch:
             sleep(0.1)
             self.setWheels( 0.5, 0.0 )
             sleep(0.5)
+            return True
         else:
             print("No obstacle")
+            return False
+        return False
 
     def turnRight(self):
         self.setWheels(.5, .25)
@@ -287,8 +297,18 @@ class myFinch:
     def discharging(self):
         self.tweety.led("#FF0000")
 
-    def delay (self, time):
-        print("howdy")
+    def delay (self, time, lspeed, rspeed):
+        timer = 0
+        while (timer < time):
+            self.setWheels(lspeed, rspeed)
+            if (self.checkForObstacle() == True):
+                lspeed, rspeed = rspeed, lspeed
+                self.setWheels(lspeed, rspeed)
+                continue
+            else:
+                timer = timer + 0.1
+                sleep(0.1)
+                continue
         #while loop with time and check for obstacles
 ##########################################################
 #                   main program                         #
@@ -304,6 +324,7 @@ def calibrateLights(tweety, filename):
         left_, right_ = tweety.isLight()
         left_sensor.append(left_)
         right_sensor.append(right_)
+        sleep(1)
 
     left_sensor.sort()
     right_sensor.sort()
