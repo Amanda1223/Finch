@@ -35,15 +35,21 @@ class Lighting:
 
         self.readFile()
 
-    def lightStatus(self, current_left, current_right):
+    def getMax(self):
+        return self.thresh_bright_right, self.thresh_bright_left
 
+    def lightStatus(self, current_left, current_right):
+        print("Left ")
+        print (current_left )
+        #print (" Right ")
+        #print(current_right)
         left_status, right_status = 0, 0
         if current_left < (self.min_left - self.max_deviation):
             left_status = -1
             self.left_comp = self.min_left - current_left
 
         elif current_left > (self.max_left + self.max_deviation):
-            print(current_left, " LEFT maximum ", (self.max_left+self.max_deviation))
+            #print(current_left, " LEFT maximum ", (self.max_left+self.max_deviation))
             left_status = 1
             if current_left > self.left_bright:
                 self.left_bright = current_left
@@ -54,7 +60,7 @@ class Lighting:
             self.right_comp = self.min_right - current_right
 
         elif current_right > (self.max_right + self.max_deviation):
-            print(current_right, " RIGHT maximum ", (self.max_right+self.max_deviation))
+            #print(current_right, " RIGHT maximum ", (self.max_right+self.max_deviation))
             right_status = 1
             if current_right > self.right_bright:
                 self.right_bright = current_right
@@ -73,8 +79,8 @@ class Lighting:
                 numData = line.split(": ")
                 if len(numData)> 1:
                     totalData.append(float(numData[1].rstrip()));
-            print(totalData)
-            print(len(totalData))
+            #print(totalData)
+            #print(len(totalData))
             # Left sensor calibration values
             self.max_left = totalData[0]
             self.min_left = totalData[1]
@@ -106,13 +112,13 @@ class Lighting:
 
 class myFinch:
     def __init__(self, tweety):
-        print("Initializing the Finch")
+        #print("Initializing the Finch")
         self.finch = tweety
 
-        print ("Initializing the Light variables")
+        #print ("Initializing the Light variables")
         self.lighting = Lighting()
 
-        print("Initializing obstacle sensors")
+        #print("Initializing obstacle sensors")
         self.lobst, self.robst = self.finch.obstacle()
 
         self.CONST_LIGHT = 1
@@ -130,8 +136,12 @@ class myFinch:
         self.DEF_LEFT_CTURN = 0.65
         self.DEF_RIGHT_CTURN = 0.15
 
-        self.DEF_LEFT_TURN = 0.5
-        self.DEF_RIGHT_TURN = 0.3
+        self.slow = 0.4
+        self.fast = 0.5
+
+        self.DEF_LEFT_TURN = self.fast
+        self.DEF_RIGHT_TURN = self.slow
+
 
         self.curr_left_speed = 0.0
         self.curr_right_speed = 0.0
@@ -153,28 +163,31 @@ class myFinch:
 
     def switchMovement(self, side):
         if side == self.CONST_LEFT:
-            self.DEF_LEFT_TURN = 0.5
-            self.DEF_RIGHT_TURN = 0.3
+            self.DEF_LEFT_TURN = self.fast
+            self.DEF_RIGHT_TURN = self.slow
             self.DEF_LEFT_CTURN = 0.65
             self.DEF_RIGHT_CTURN = 0.15
 
         elif side == self.CONST_RIGHT:
-            self.DEF_RIGHT_TURN = 0.5
-            self.DEF_LEFT_TURN = 0.3
+            self.DEF_RIGHT_TURN = self.fast
+            self.DEF_LEFT_TURN = self.slow
             self.DEF_RIGHT_CTURN = 0.65
             self.DEF_LEFT_CTURN = 0.15
         return
 
+    def isLight( self ):
+        current_left, current_right = self.finch.light()
+        return current_left, current_right
 
     def lightChange(self, desiredlight):
         llight, rlight = self.finch.light()
 
         #get current lighting
-        print("Left light : ", llight)
-        print("Right light : ", rlight)
+        #print("Left light : ", llight)
+        #print("Right light : ", rlight)
 
         #determine if it is a liable change in the environment
-        print("Determining whether the environment light has changed.")
+        #print("Determining whether the environment light has changed.")
 
         isDesired = self.checkChange(llight, rlight, desiredlight)
 
@@ -184,7 +197,7 @@ class myFinch:
 
         #desired light < 0 for dark, > 0 for light
         if desiredlight == self.CONST_LIGHT:
-            print("Comparing to ensure it is a brighter area.")
+            #print("Comparing to ensure it is a brighter area.")
 
             # "reverse" and sample
             self.setWheels(self.CONST_REVERSE, self.CONST_REVERSE)
@@ -198,12 +211,12 @@ class myFinch:
                 return True
             else:
                 if ((lsample - currleft) > self.lighting.max_deviation) or ((rsample - currright) > self.lighting.max_deviation):
-                    print( "Overall Light has changed")
+                    #print( "Overall Light has changed")
                     return False
             return True
 
         if desiredlight == self.CONST_DARK:
-            print("Comparing to ensure it is a darker area")
+            #print("Comparing to ensure it is a darker area")
             return False
 
     def checkObstacle(self):
@@ -260,55 +273,70 @@ class myFinch:
     def scurryTowardsLights(self):
 
         onCurve = 0
+        maxleft, maxright = self.lighting.getMax()
+        tmpmaxleft = maxleft + .25
+        tmpmaxright = maxright + .25
+        if (tmpmaxleft) > .85:
+            tmpmaxleft = .85
+        if (tmpmaxright) > .85:
+            tmpmaxright = .85
         while (True):
             obstacle = self.checkObstacle()
-            l, r = self.finch.light()
+            l, r = self.isLight()
             left_light, right_light = self.lighting.lightStatus(l, r)
-            # self.lightChange(self.CONST_LIGHT)
+            #self.lightChange(self.CONST_LIGHT)
             if obstacle != self.CONST_NO_OBST:
                 #There was an obstacle
                 self.handleObstacle(obstacle)
                 continue
             if left_light == self.CONST_NO_CHANGE and right_light == self.CONST_NO_CHANGE:
-                print("Just Keep Swimming")
+                #print("Just Keep Swimming")
                 self.sleepMovement(0.3, self.DEF_LEFT_TURN, self.DEF_RIGHT_TURN)
 
                 onCurve = onCurve + 1
                 if onCurve == 10:
-                    print(" On small curve ")
-                    self.sleepMovement(3.0, self.DEF_LEFT_CTURN, self.DEF_RIGHT_CTURN)
+                    #print(" On small curve ")
+                    self.sleepMovement(1.5, self.DEF_LEFT_CTURN, self.DEF_RIGHT_CTURN)
                     self.setWheels(self.DEF_LEFT_TURN, self.DEF_RIGHT_TURN)
                     onCurve = 0
             elif left_light == self.CONST_LIGHT or right_light == self.CONST_RIGHT:
-                if self.lightChange(self.CONST_LIGHT) == True:
-                    onCurve = 0
-                    newObstacle = self.checkObstacle()
-                    leftval, rightval = self.lighting.getComparison()
-                    while ( newObstacle == self.CONST_NO_OBST):
-                        print(leftval , " | ", rightval)
-                        if leftval > rightval:
-                            self.turnLeft()
-                        else:
-                            self.turnRight()
-                        newObstacle = self.checkObstacle()
-                        l, r = self.finch.light()
-                        left_light, right_light = self.lighting.lightStatus(l, r)
-                        leftval, rightval = self.lighting.getComparison()
+                #if self.lightChange(self.CONST_LIGHT) == True:
+                onCurve = 0
+                leftval, rightval = self.lighting.getComparison()
+                if leftval > rightval:
+                    self.turnLeft()
+                else:
+                    self.turnRight()
 
-                    self.setWheels(0.0, 0.0)
-                    sleep(5)
-                    self.setWheels(self.DEF_LEFT_TURN, self.DEF_RIGHT_TURN)
+                if ((leftval + maxleft) > (tmpmaxleft)) and ((rightval + maxright) > tmpmaxright):
+                    print("Under bright area!")
+                    while( True ):
+                        self.setWheels(0.0, 0.0)
+                        self.sleepMovement(0.3, self.CONST_FORWARD, self.CONST_FORWARD)
+                        self.setWheels(0.0, 0.0)
+                        left, right = self.isLight()
+                        print(left, " ", right)
+                        print(tmpmaxleft, " ", tmpmaxright)
+                        if (left > tmpmaxleft) or (right > tmpmaxright):
+                            tmpmaxleft = left
+                            tmpmaxright = right
+                            print("hello light")
+                            sleep(0.5)
+                        else:
+                            print("Fuck me right?")
+                            self.setWheels(-0.5, -0.5)
+                            sleep(0.3)
+                            self.setWheels(0.0, 0.0)
+                            break
+                    os._exit(0)
+
                     continue
                 else:
                     continue
         return
 
-        def isLight( self ):
-            current_left, current_right = self.finch.light()
-            return current_left, current_right
-
 def calibrateLights(tweety, filename):
-    tweety.wheels(0.0, 0.0)
+    tweety.wheels(0.3, 0.6)
     left_sensor = []
     right_sensor = []
     for x in range (0, 20):
@@ -319,7 +347,7 @@ def calibrateLights(tweety, filename):
 
     left_sensor.sort()
     right_sensor.sort()
-    # print (left_sensor, right_sensor)
+    # #print (left_sensor, right_sensor)
     left_minimum, left_maximum = left_sensor[0], left_sensor[-1]
     right_minimum, right_maximum = right_sensor[0], right_sensor[-1]
     target = open(filename, 'w')
@@ -346,7 +374,7 @@ def calibrateLights(tweety, filename):
 
 
 newFinch = Finch()
-# calibrateLights(newFinch, "calib.txt")
+#calibrateLights(newFinch, "calib.txt")
 
 tweety = myFinch(newFinch)
 tweety.scurryTowardsLights()
