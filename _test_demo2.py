@@ -175,10 +175,13 @@ class myFinch:
         return current_left, current_right
 
     def scurryTowardsLights ( self ):
+        lspeed = 0.3
+        rspeed = 0.5
+        clspeed = 0.1
+        crspeed = 0.5
         onCurve = 0
         onMax = 0
-        lspeed, rspeed = 0.3, 0.5
-        clspeed, crspeed = 0.1, 0.5
+
         maxleft, maxright = self.myLights.getMax()
         tmpmaxleft = maxleft + .25
         tmpmaxright = maxright + .25
@@ -193,8 +196,12 @@ class myFinch:
             if ( self.checkForObstacle()):
 
                 #switch the speeds
-                lspeed, rspeed = rspeed, lspeed
-                clspeed, crspeed = crspeed, clspeed
+                tmp = lspeed
+                ctmp = clspeed
+                lspeed = rspeed
+                rspeed = tmp
+                clspeed = crspeed
+                clspeed = ctmp
 
             if left_light == 0 and right_light == 0:
 
@@ -302,7 +309,9 @@ class myFinch:
         while (timer < time):
             self.setWheels(lspeed, rspeed)
             if (self.checkForObstacle() == True):
-                lspeed, rspeed = rspeed, lspeed
+                tmp = lspeed
+                lspeed = rspeed
+                rspeed = tmp
                 self.setWheels(lspeed, rspeed)
                 continue
             else:
